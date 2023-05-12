@@ -23,6 +23,8 @@ ROS: *ros-noetic 1.16.0*
 
 Рассмотрим файл [robot.py](beginner_tutorials/src/robot.py).
 
+### main()
+
 ```python
 if __name__ == '__main__':
     rospy.init_node("Robot")
@@ -33,6 +35,8 @@ if __name__ == '__main__':
         com.publish_odom()
         rate.sleep()
 ```
+
+### Commander
 
 Класс Commander содержит методы publish_enc() и publish_odom() для публикации сообщений о состоянии робота с частотой 10 Гц, а также обрабатывает управляющие сообщения. Для симуляции моторов используется класс MotorModel, о нём далее.
 
@@ -53,6 +57,8 @@ class Commander:
         self.rot = 0
 ```
 
+### Commander.publish_enc()
+
 Метод publish_enc() публикует сообщение типа Encoders в топик **/enc**
 
 ```python
@@ -66,6 +72,8 @@ class Commander:
         self.pub_enc.publish(msg)
         rospy.loginfo(msg)
 ```
+
+### Commander.publish_odom()
 
 Метод publish_odom() публикует сообщение типа Odometry в топик **/odom**
 
@@ -82,6 +90,8 @@ class Commander:
         rospy.loginfo(msg)
 ```
 
+### Commander.callback()
+
 Когда узел получает сообщение с командой в формате geometry_msgs/Twist в топике **/cmd_vel**, вызывается функция callback(), которая записывает полученные команды и вызывает обновление модели.
 
 ```python
@@ -91,6 +101,8 @@ class Commander:
         rospy.loginfo("Angular Component: [%f]"%(msg.angular.z))
         self.update(msg)
 ```
+
+### Commander.update()
 
 Ну и самое главное - функция update(). Получив сообщение, содержащие целевые значения линейной и угловой скоростей робота, функция вычисляет целевые значения угловых скоростей колёс. Затем эти скорости передаются в модели правого и левого колёс. Каждое колёсо описывается апериодическим звеном. Метод step() у моделей колёс возвращает их текущую угловую скорость и dt с момента последнего вызова. На основе текущих скоростей true_wl и true_wr вычисляются истинные скорости - линейная V и угловая Omega. Путём интегрирования скоростей происходит определение координат x, y робота в пространстве, а также азимута rot. Так как формат nav_msgs/Odometry подразумевает ориентацию робота в виде кватерниона, то в конце происходит преобразование азимута в кватернион и запись всех вычисленных величин в формат, готовый к выводу.
 
@@ -126,4 +138,40 @@ class Commander:
         self.twist.twist.linear.x = V * cos(self.rot)
         self.twist.twist.linear.y = V * sin(self.rot)
         self.twist.twist.angular.z = self.rot
+```
+
+### MotorModel
+
+Как уже было сказано выше, моторы робота симулируются апериодическим звеном. Каждый экземпляр содержит следующие поля: модель системы sys, текущее состояние x, время последнего шага t, текущую целевую скорость w_target, а также показание энкодера enc.
+
+```python
+class MotorModel:
+    def __init__(self):
+        k = 1
+        T = 1
+        W = control.tf(k, [T, 1])
+        self.sys = control.LinearIOSystem(W)
+        self.x = [[0, 0]]
+        self.t = rospy.get_time()
+        self.w_target = 0
+        self.enc = 0
+```
+
+### MotorModel.step()
+
+Данный метод моделирует поведение САУ. На выходе САУ имеем текущую угловую скорость, а также новое состояние системы. Зная время, прошедшее с последнего шага и угловую скорость, вычисляет количество импульсов энкодера. По нему метод определяет истинную скорость вращения колеса. На заключительном этапе происходит запись показаний энкодера, времени и целевой угловой скорости для использования на следующем шаге. Метод возвращает истинную угловую скорость и dt, которое понадобится для интегрирования при вычислении одометрии.
+
+```python
+    def step(self, w_target):
+        t = rospy.get_time()
+        a, w, self.x = control.input_output_response(self.sys, [self.t, t], [self.w_target, w_target], self.x[0][1], return_x=True)
+        dt = t - self.t
+        d_enc = int(w[1] * dt / 2 / 3.1415926535 * 4096)
+
+        true_w = d_enc * 2 * 3.1415926535 / dt / 4096
+
+        self.enc += d_enc
+        self.t = t
+        self.w_target = w_target
+        return true_w, dt
 ```
