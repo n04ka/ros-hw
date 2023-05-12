@@ -175,3 +175,109 @@ class MotorModel:
         self.w_target = w_target
         return true_w, dt
 ```
+
+## Как запустить
+
+Краткая инструкция.
+
+**Внимание!**
+
+Пакет написан для
+
+ОC: *Ubuntu 20.04*
+
+ROS: *ros-noetic 1.16.0*
+
+### Загрузка пакетов
+
+Клонировать этот репозиторий, а также [turtlebot3_teleop](http://wiki.ros.org/turtlebot3_teleop) в catkin_ws/src.
+
+```linux
+$ cd ~/catkin_ws/src
+$ git clone https://github.com/ROBOTIS-GIT/turtlebot3
+$ git clone https://github.com/n04ka/ros-hw
+```
+
+### Ядро
+
+Запустить ядро ROS
+
+```linux
+$ roscore
+```
+
+В терминале появится информация о запуске ядра
+
+### Узел
+
+В новом терминале сделать source
+
+```linux
+$ cd ~/catkin_ws
+$ source ./devel/setup.bash
+```
+
+Выполнить catkin_make
+
+```linux
+$ catkin_make
+```
+
+Не стоит переживать если на этом этапе в терминале будет красное сообщение об ошибке, узел запустится и с ним, главное, чтобы robot.py был исполняемым:
+
+```linux
+$ rosrun beginner_tutorials robot.py
+```
+
+Если всё сделано правильно, то в терминале начнут появляться сообщения узла
+
+### Управляющий узел turtlebot
+
+В новом терминале запустить turtlebot. Из него будет происходить управление роботом на клавиши WASDX.
+
+```linux
+export TURTLEBOT3_MODEL=waffle; roslaunch turtlebot3_teleop  turtlebot3_teleop_key.launch
+```
+
+### Визуализация
+
+Запуск RViz осуществляется командой в новом терминале
+
+```linux
+$ rosrun rviz rviz
+```
+
+![image](https://github.com/n04ka/ros-hw/assets/133410694/1b931c8d-41b0-4054-be0f-1e1ee2b4fdeb)
+
+В открывшемся окне необходимо добавить инструмент Odometry и привязать его к топику /odom. В Global Options -> Fixed Frame установить odom. Чтобы стрелка на экране не клонировалась, можно установить параметр Keep в 1, тогда отрисовываться будет только самое последнее положение робота.
+
+### Готово
+
+В итоге должно быть 4 открытых терминала:
+1. Ядро ROS
+2. Управление turtlebot
+3. Узел Robot
+4. RViz
+
+Управление:
++ W - увеличить V
++ X - уменьшить V
++ A - увеличить w
++ D - уменьшить w
++ S - остановка
+
+*Бурлак А. А. Катков Г. И.*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
