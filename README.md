@@ -17,7 +17,7 @@ ROS: *ros-noetic 1.16.0*
 
 Сообщения из топика **/odom** могут быть использованы для визуализации в RViz. Открыв одновременно терминал с turtlebot3_teleop и RViz, можно управлять роботом, как машинкой на пульте управления.
 
-![image](scheme.png)
+![image](rviz.png)
 
 ## Структура узла
 
@@ -247,7 +247,7 @@ export TURTLEBOT3_MODEL=waffle; roslaunch turtlebot3_teleop  turtlebot3_teleop_k
 $ rosrun rviz rviz
 ```
 
-![image](scheme.png)
+![image](rviz.png)
 
 В открывшемся окне необходимо добавить инструмент Odometry и привязать его к топику /odom. В Global Options -> Fixed Frame установить odom. Чтобы стрелка на экране не клонировалась, можно установить параметр Keep в 1, тогда отрисовываться будет только самое последнее положение робота.
 
